@@ -1,0 +1,5 @@
+{
+  "name": "Remix: MedNotes Pro",
+  "description": "An Obsidian-like note-taking app for MBBS students with Gemini AI formatting and search grounding.",
+  "requestFramePermissions": []
+}

@@ -1,0 +1,84 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+@import "highlight.js/styles/github-dark.css";
+
+@layer utilities {
+  .prose {
+    --tw-prose-body: #d1d5db;
+    --tw-prose-headings: #f3f4f6;
+    --tw-prose-lead: #9ca3af;
+    --tw-prose-links: #3b82f6;
+    --tw-prose-bold: #f3f4f6;
+    --tw-prose-counters: #9ca3af;
+    --tw-prose-bullets: #4b5563;
+    --tw-prose-hr: #374151;
+    --tw-prose-quotes: #f3f4f6;
+    --tw-prose-quote-borders: #3b82f6;
+    --tw-prose-captions: #9ca3af;
+    --tw-prose-code: #f3f4f6;
+    --tw-prose-pre-code: #e5e7eb;
+    --tw-prose-pre-bg: #1f2937;
+    --tw-prose-th-borders: #4b5563;
+    --tw-prose-td-borders: #374151;
+  }
+
+  .prose blockquote {
+    background-color: rgba(31, 41, 55, 0.5);
+    border-radius: 0 0.5rem 0.5rem 0;
+    padding: 1rem 1.5rem;
+    font-style: normal;
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-left-width: 4px;
+  }
+
+  .prose blockquote p:first-of-type {
+    margin-top: 0;
+  }
+
+  .prose blockquote p:last-of-type {
+    margin-bottom: 0;
+  }
+
+  .prose table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2em;
+    margin-bottom: 2em;
+  }
+
+  .prose th {
+    background-color: rgba(31, 41, 55, 0.8);
+    padding: 0.75rem 1rem;
+    text-align: left;
+  }
+
+  .prose td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--tw-prose-td-borders);
+  }
+
+  .prose tr:nth-child(even) {
+    background-color: rgba(31, 41, 55, 0.2);
+  }
+}
+
+/* Custom scrollbar for Obsidian feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+

@@ -1,0 +1,117 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "parthbhrdwz@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function uidUnchanged() {
+      return !('userId' in request.resource.data) || request.resource.data.userId == request.auth.uid;
+    }
+
+    function uidNotModified() {
+      return !('userId' in request.resource.data) || request.resource.data.userId == resource.data.userId;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function isValidString(field, minLen, maxLen) {
+      return request.resource.data[field] is string &&
+             request.resource.data[field].size() >= minLen &&
+             request.resource.data[field].size() <= maxLen;
+    }
+
+    function isValidOptionalString(field, minLen, maxLen) {
+      return !(field in request.resource.data) ||
+             (request.resource.data[field] is string &&
+              request.resource.data[field].size() >= minLen &&
+              request.resource.data[field].size() <= maxLen);
+    }
+
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser() {
+      return hasRequiredFields(['uid', 'email', 'createdAt']) &&
+             request.resource.data.uid == request.auth.uid &&
+             request.resource.data.email is string &&
+             request.resource.data.createdAt is timestamp &&
+             isValidOptionalString('displayName', 0, 100) &&
+             isValidOptionalString('photoURL', 0, 2048);
+    }
+
+    function isValidNote() {
+      return hasRequiredFields(['id', 'userId', 'subject', 'title', 'content', 'createdAt', 'updatedAt']) &&
+             request.resource.data.userId == request.auth.uid &&
+             isValidString('id', 1, 100) &&
+             isValidString('subject', 1, 100) &&
+             isValidString('title', 0, 200) &&
+             isValidString('content', 0, 100000) && // 100KB max per note
+             isValidOptionalString('rawContent', 0, 100000) &&
+             isValidOptionalString('subfolder', 0, 100) &&
+             request.resource.data.createdAt is timestamp &&
+             request.resource.data.updatedAt is timestamp &&
+             (!('isTrashed' in request.resource.data) || request.resource.data.isTrashed is bool) &&
+             (!('trashedAt' in request.resource.data) || request.resource.data.trashedAt is timestamp);
+    }
+
+    function isValidUserSettings() {
+      return request.resource.data.userId == request.auth.uid &&
+             (!('subjectFolders' in request.resource.data) || request.resource.data.subjectFolders is map) &&
+             (!('dailyRecommendations' in request.resource.data) || request.resource.data.dailyRecommendations is list) &&
+             (!('lastScanDate' in request.resource.data) || request.resource.data.lastScanDate is string) &&
+             (!('lastBacklinkScanDate' in request.resource.data) || request.resource.data.lastBacklinkScanDate is string);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidUser();
+      allow update: if (isOwner(userId) && isValidUser() && areImmutableFieldsUnchanged(['uid', 'createdAt', 'email'])) || isAdmin();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    match /notes/{noteId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidNote() && uidUnchanged();
+      allow update: if (isDocOwner() && isValidNote() && uidNotModified() && areImmutableFieldsUnchanged(['id', 'userId', 'createdAt'])) || isAdmin();
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /userSettings/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidUserSettings();
+      allow update: if isOwner(userId) && isValidUserSettings() && uidNotModified();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+  }
+}
